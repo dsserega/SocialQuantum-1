@@ -1,7 +1,6 @@
 #include "Common.h"
 
 #include "GraphicsSettings.h"
-#include "tinyxml.h"
 
 using namespace std;
 
