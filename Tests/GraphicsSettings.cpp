@@ -33,7 +33,7 @@ GraphicsSettings::GraphicsSettings()
 	handlers[RESOLUTION] = [this](const char* value) { settings.resolution = EnumFromString<Resolution>(kResolutionStr, value); };
 	handlers[FULL_SCREEN_MODE] = [this](const char* value) { settings.fullScreenMode = boolFromStr(value); };
 	handlers[DYNAMIC_LIGHT] = [this](const char* value) { settings.dynamicLight = boolFromStr(value); graphics = GQ_CUSTOM; };
-	handlers[VIEW_DISTANCE] = [this](const char* value) { settings.viewDistance = atoi(value); };
+	handlers[VIEW_DISTANCE] = [this](const char* value) { auto d = atoi(value); if(d >= 100 && d <= 1000) settings.viewDistance = atoi(value); };
 	handlers[TEXTURE_QUALITY] = [this](const char* value) { settings.textures = EnumFromString<TextureQuality>(kQualityStr, value); graphics = GQ_CUSTOM; };
 	handlers[SHADOWS_QUALITY] = [this](const char* value) { settings.shadow = EnumFromString<ShadowsQuality>(kQualityStr, value);  graphics = GQ_CUSTOM; };
 	handlers[GRAPHICS_QUALITY] = [this](const char* value) { graphics = EnumFromString<GraphicsQuality>(kQualityStr, value); OnSetQuality(); };
