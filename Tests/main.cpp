@@ -28,20 +28,22 @@ StrVec split(const string& str, char delimiter) {
 class InputListener
 {
 public:
-	InputListener(GraphicsSettings* gs) : settings(gs), it(actions.end())
+	InputListener(GraphicsSettings* gs) : settings(gs)
 	{
 		handlers["change"] = [this](const StrVec& prm)
 		{
 			CHECK_PARMS(prm, 3);
 
 			auto command = UpdateSettingsAction(settings, prm[1].c_str(), prm[2].c_str());
+			auto it = actions.begin() + index;
 
 			actions.erase(it, actions.end());
-			actions.push_back(command);
-
-			it = actions.end();
-			
+					
 			command.Do();
+
+			++index;
+
+			actions.push_back(command);
 
 			return true;
 		};
@@ -56,7 +58,11 @@ public:
 
 		handlers["print"] = [this](const StrVec& prm) 
 		{
-			cout << settings->ToXML();
+			auto map = settings->ToMap();
+			
+			for (auto it : map)
+				cout << it.first << "=" << it.second << endl;
+
 			return true; 
 		};
 
@@ -78,19 +84,28 @@ public:
 
 		handlers["undo"] = [this](const StrVec& prm)
 		{
-			if (actions.empty())
+			if (actions.empty() || index <= 0)
 				throw std::runtime_error("Nothig to Undo");
 
-			if(it == actions.end())
-				it = actions.end() - 1;
-
-			it->Undo();
-			--it;
+			auto action = actions[--index];
+			
+			action.Undo();
 
 			return true;
 		};
 
-		handlers["redo"];
+		handlers["redo"] = [this](const StrVec& prm)
+		{
+			if (index >= actions.size())
+				throw std::runtime_error("Nothig to Redo");
+
+			auto action = actions[index++];
+
+			action.Do();
+
+			return true;
+		};
+
 		handlers["exit"] = [this](const StrVec& prm) { return false; };
 	}
 
@@ -105,7 +120,7 @@ public:
 			auto it = handlers.find(params[0]);
 
 			if(it == handlers.end())
-				throw std::runtime_error("Unknown commant");
+				throw std::runtime_error("Unknown command");
 
 			return it->second(params);
 		}
@@ -122,7 +137,7 @@ private:
 	
 	map<string, InputHandler> handlers;
 	Actions actions;
-	Actions::iterator it;
+	int index = 0;
 };
 
 int main()

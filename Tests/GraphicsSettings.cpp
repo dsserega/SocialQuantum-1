@@ -91,32 +91,6 @@ string GraphicsSettings::ToXML() const
 	return ss.str();
 }
 
-bool GraphicsSettings::FromXML(const char* xml)
-{
-	TiXmlDocument doc;
-
-	doc.Parse(xml);
-
-	auto el = doc.FirstChildElement();
-
-	if (el == nullptr)
-		return false;
-
-	StrVec params = { RESOLUTION, ANTIALIASING, FULL_SCREEN_MODE, DYNAMIC_LIGHT, VIEW_DISTANCE, ANTIALIASING, SHADOWS_QUALITY, GRAPHICS_QUALITY };
-
-	for (auto prm : params)
-	{
-		auto child = el->FirstChildElement(prm.c_str());
-
-		if (child == nullptr)
-			continue;
-
-		SetValue(prm.c_str(), child->GetText());
-	}
-
-	return true;
-}
-
 void GraphicsSettings::SetValue(const char* key, const char* value)
 {
 	auto it = handlers.find(key);
@@ -142,35 +116,28 @@ void GraphicsSettings::Save(const char* file, Format format)
 {
 	fstream fs;
 
-	int mode = format == Bin ? file, ios::out | ios::trunc || ios::binary : ios::out | ios::trunc;
+	auto xml = ToXML();
 
-	fs.open(file, mode);
+	if (format == Bin)
+	{
+		fs.open(file, ios::out | ios::trunc | ios::binary);
+		
+		if (!fs.is_open())
+			throw std::runtime_error(string("Can't open file ") + file);
 
-	if(!fs.is_open())
-		throw std::runtime_error(string("Can't open file ") + file);
+		fs.write((char*)&xml, sizeof(xml));
+	}
+	else
+	{
+		fs.open(file, ios::out | ios::trunc);
 
-	fs << ToXML();
+		if (!fs.is_open())
+			throw std::runtime_error(string("Can't open file ") + file);
+
+		fs << ToXML();
+
+	}
+
 	fs.close();
 }
 
-bool GraphicsSettings::Load(const char * file, Format format)
-{
-	fstream fs;
-
-	int mode = format == Bin ? file, ios::in || ios::binary : ios::in;
-
-	fs.open(file, mode);
-
-	if (!fs.is_open())
-		return false;
-
-	string line;
-	string xml;
-
-	while (getline(fs, line))
-		xml += line;
-
-	fs.close();
-
-	return FromXML(xml.c_str());
-}
